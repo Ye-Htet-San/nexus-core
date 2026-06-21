@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus Logistics Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-white font-sans min-h-screen flex flex-col items-center justify-center p-6">
+
+    <div class="w-full max-w-md bg-slate-800 rounded-xl shadow-2xl overflow-hidden border border-slate-700">
+
+        <div class="bg-blue-600 p-6 text-center">
+            <h1 class="text-2xl font-bold tracking-wider">NEXUS CORE</h1>
+            <p class="text-blue-200 text-sm mt-1">Order Processing Satellite</p>
+        </div>
+
+        <div class="p-6">
+            <label class="block text-sm font-medium text-slate-400 mb-2">Target Order ID</label>
+            <div class="flex gap-2">
+                <input type="text" id="orderInput" value="Nex-1109" class="flex-1 bg-slate-900 border border-slate-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500">
+            <button onclick="calculateOrder()" 
+                    class="bg-blue-600 hover:bg-blue-500 transition-colors px-4 py-2 rounded-lg font-bold">
+                    Process
+                </button>
+            </div>
+            <p id="statusMsg" class="text-sm mt-3 text-slate-400 h-4"></p>
+        </div>
+
+        <div id="resultsPanel" class="hidden border-t border-slate-700 bg-slate-850 p-6">
+            <h2 id="itemName" class="text-lg font-semibold text-blue-400 mb-4">Item Name</h2>
+            
+            <div class="space-y-3 text-sm">
+                <div class="flex justify-between border-b border-slate-700 pb-2">
+                    <span class="text-slate-400">Driving Distance</span>
+                    <span id="resDistance" class="font-mono">0.00 km</span>
+                </div>
+                <div class="flex justify-between border-b border-slate-700 pb-2">
+                    <span class="text-slate-400">Delivery Fee</span>
+                    <span id="resFee" class="font-mono">0 MMK</span>
+                </div>
+                <div class="flex justify-between pb-2">
+                    <span class="text-slate-400">Commercial Tax (5%)</span>
+                    <span id="resTax" class="font-mono">0 MMK</span>
+                </div>
+            </div>
+
+            <div class="mt-6 p-4 bg-blue-900/30 border border-blue-800 rounded-lg flex justify-between items-center">
+                <span class="font-bold text-slate-300">Final Invoice</span>
+                <span id="resTotal" class="text-xl font-bold text-emerald-400 font-mono">0 MMK</span>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        async function calculateOrder() {
+            const orderId = document.getElementById('orderInput').value;
+            const statusMsg = document.getElementById('statusMsg');
+            const resultsPanel = document.getElementById('resultsPanel');
+
+            // Reset UI
+            resultsPanel.classList.add('hidden');
+            statusMsg.innerText = "📡 Connecting to Routing Satellite...";
+            statusMsg.className = "text-sm mt-3 text-blue-400 animate-pulse h-4";
+
+            try {
+                // Call the local Node.js server
+                const response = await fetch(`http://localhost:3000/api/process/${orderId}`);
+                const data = await response.json();
+
+                if (!response.ok) throw new Error(data.error);
+
+                // Update UI with retrieved data
+                document.getElementById('itemName').innerText = data.item;
+                document.getElementById('resDistance').innerText = `${data.distance} km`;
+                document.getElementById('resFee').innerText = `${data.fee.toLocaleString()} MMK`;
+                document.getElementById('resTax').innerText = `${data.tax.toLocaleString()} MMK`;
+                document.getElementById('resTotal').innerText = `${data.total.toLocaleString()} MMK`;
+
+                statusMsg.innerText = "✅ Route Calculated Successfully";
+                statusMsg.className = "text-sm mt-3 text-emerald-400 h-4";
+                resultsPanel.classList.remove('hidden');
+
+            } catch (error) {
+                statusMsg.innerText = `❌ Error: ${error.message}`;
+                statusMsg.className = "text-sm mt-3 text-red-400 h-4";
+            }
+        }
+    </script>
+    
+</body>
+</html>
